@@ -2,11 +2,11 @@
 export const CONFIG = {
   TILE_SIZE: 40,
   PLAYER_RADIUS: 14,
-  PLAYER_SPEED: 200, // Faster movement for more excitement
-  FLASHLIGHT_RANGE: 320,
-  FLASHLIGHT_ANGLE: Math.PI / 2.2,
-  HIDER_VISIBILITY_RADIUS: 140,
-  INTERPOLATION_FACTOR: 0.15,
+  PLAYER_SPEED: 180, // Reduced by 25%
+  FLASHLIGHT_RANGE: 400,
+  FLASHLIGHT_ANGLE: Math.PI / 2.5, // Sharper triangular beam (~72 degrees)
+  HIDER_VISIBILITY_RADIUS: 150,
+  INTERPOLATION_SPEED: 15, // Speed of smoothing for remote players
   SERVER_URL: "https://hide-seek-server-l7u3.onrender.com"
 };
 
@@ -32,14 +32,8 @@ export const MAP_DATA = {
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
   ],
   spawnPoints: [
-    { x: 180, y: 180 },
-    { x: 400, y: 180 },
-    { x: 620, y: 180 },
-    { x: 180, y: 440 },
-    { x: 400, y: 440 },
-    { x: 620, y: 440 },
-    { x: 180, y: 620 },
-    { x: 400, y: 620 },
-    { x: 620, y: 620 }
+    { x: 180, y: 180 }, { x: 400, y: 180 }, { x: 620, y: 180 },
+    { x: 180, y: 440 }, { x: 400, y: 440 }, { x: 620, y: 440 },
+    { x: 180, y: 620 }, { x: 400, y: 620 }, { x: 620, y: 620 }
   ]
 };

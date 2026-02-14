@@ -8,7 +8,7 @@ const app = express();
 app.use(cors({ origin: "*" }));
 
 app.get("/", (_, res) => {
-  res.send("Shadow Hunt Server v2.3 - High Performance");
+  res.send("Shadow Hunt Server v3.0 - Ready System & Mobile Support");
 });
 
 const server = http.createServer(app);
@@ -26,12 +26,12 @@ server.listen(PORT, "0.0.0.0", () => {
 const CONFIG = {
   TILE_SIZE: 40,
   PLAYER_RADIUS: 14,
-  PLAYER_SPEED: 200,
-  FLASHLIGHT_RANGE: 320,
-  FLASHLIGHT_ANGLE: Math.PI / 2.2, // ~80 degrees
+  PLAYER_SPEED: 172, // Reduced by 25% from 230
+  FLASHLIGHT_RANGE: 400,
+  FLASHLIGHT_ANGLE: Math.PI / 2.5, 
   HIDE_DURATION: 15,
   HUNT_DURATION: 120,
-  LOBBY_COUNTDOWN: 15,
+  LOBBY_COUNTDOWN: 10,
   MIN_PLAYERS: 3
 };
 
@@ -104,29 +104,6 @@ function checkWallCollision(x, y, radius) {
   return false;
 }
 
-function lineIntersectsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
-  let t0 = 0, t1 = 1;
-  const dx = x2 - x1, dy = y2 - y1;
-  const p = [-dx, dx, -dy, dy];
-  const q = [x1 - rx, rx + rw - x1, y1 - ry, ry + rh - y1];
-  for (let i = 0; i < 4; i++) {
-    if (p[i] === 0) { if (q[i] < 0) return false; } 
-    else {
-      const t = q[i] / p[i];
-      if (p[i] < 0 && t > t0) t0 = t;
-      if (p[i] > 0 && t < t1) t1 = t;
-    }
-  }
-  return t0 <= t1;
-}
-
-function hasLineOfSight(x1, y1, x2, y2) {
-  for (const wall of walls) {
-    if (lineIntersectsRect(x1, y1, x2, y2, wall.x, wall.y, wall.w, wall.h)) return false;
-  }
-  return true;
-}
-
 function normalizeAngle(angle) {
   while (angle > Math.PI) angle -= 2 * Math.PI;
   while (angle < -Math.PI) angle += 2 * Math.PI;
@@ -139,6 +116,10 @@ function isInFlashlightCone(kx, ky, ka, tx, ty) {
   if (dist > CONFIG.FLASHLIGHT_RANGE) return false;
   const angleDiff = Math.abs(normalizeAngle(Math.atan2(dy, dx) - ka));
   return angleDiff < (CONFIG.FLASHLIGHT_ANGLE / 2);
+}
+
+function getAliveHiders() {
+    return Object.values(players).filter(p => p.role === 'hider' && p.isAlive);
 }
 
 /* ================= GAME FLOW ================= */
@@ -156,24 +137,26 @@ function resetGame() {
   if (lobbyCountdownInterval) clearInterval(lobbyCountdownInterval);
   phaseInterval = null;
   lobbyCountdownInterval = null;
-  
   phase = PHASES.LOBBY;
   timer = 0;
   
   Object.values(players).forEach(p => { 
     p.role = "hider"; 
     p.isAlive = true; 
+    p.isReady = false;
     p.x = MAP_DATA.spawnPoints[0].x;
     p.y = MAP_DATA.spawnPoints[0].y;
   });
   
   broadcastPlayers();
   broadcastPhase();
-  checkAndStartLobbyCountdown();
 }
 
 function checkAndStartLobbyCountdown() {
-  if (Object.keys(players).length >= CONFIG.MIN_PLAYERS && phase === PHASES.LOBBY) {
+  const playerList = Object.values(players);
+  const everyoneReady = playerList.length >= CONFIG.MIN_PLAYERS && playerList.every(p => p.isReady);
+
+  if (everyoneReady && phase === PHASES.LOBBY) {
     if (lobbyCountdownInterval) return;
     timer = CONFIG.LOBBY_COUNTDOWN;
     broadcastPhase();
@@ -186,12 +169,18 @@ function checkAndStartLobbyCountdown() {
         startHidePhase();
       }
     }, 1000);
+  } else if (!everyoneReady && lobbyCountdownInterval) {
+    clearInterval(lobbyCountdownInterval);
+    lobbyCountdownInterval = null;
+    timer = 0;
+    broadcastPhase();
   }
 }
 
 function startHidePhase() {
   phase = PHASES.HIDE;
   timer = CONFIG.HIDE_DURATION;
+  
   const ids = Object.keys(players);
   const killerId = ids[Math.floor(Math.random() * ids.length)];
 
@@ -202,7 +191,6 @@ function startHidePhase() {
     players[id].x = spawn.x;
     players[id].y = spawn.y;
     players[id].angle = 0;
-    io.to(id).emit("roleAssigned", { role: players[id].role });
   });
 
   broadcastPhase();
@@ -233,10 +221,7 @@ function endGame(winner) {
   phase = PHASES.RESULT;
   if (phaseInterval) clearInterval(phaseInterval);
   io.emit("gameEnd", { winner });
-  setTimeout(() => {
-    io.emit("gameReset");
-    resetGame();
-  }, 5000);
+  setTimeout(() => { resetGame(); }, 5000);
 }
 
 /* ================= SOCKETS ================= */
@@ -250,12 +235,20 @@ io.on("connection", (socket) => {
       y: MAP_DATA.spawnPoints[0].y,
       angle: 0,
       role: "hider",
-      isAlive: true
+      isAlive: true,
+      isReady: false
     };
     socket.emit("joined", { id: socket.id, name: players[socket.id].name, players: Object.values(players) });
     broadcastPlayers();
     broadcastPhase();
-    checkAndStartLobbyCountdown();
+  });
+
+  socket.on("toggleReady", () => {
+    if (players[socket.id] && phase === PHASES.LOBBY) {
+      players[socket.id].isReady = !players[socket.id].isReady;
+      broadcastPlayers();
+      checkAndStartLobbyCountdown();
+    }
   });
 
   socket.on("move", ({ x, y, angle }) => {
@@ -272,11 +265,6 @@ io.on("connection", (socket) => {
     p.angle = angle ?? p.angle;
   });
 
-  socket.on("angle", ({ angle }) => {
-    const p = players[socket.id];
-    if (p && p.isAlive) p.angle = angle;
-  });
-
   socket.on("attemptKill", ({ targetId }) => {
     if (phase !== PHASES.HUNT) return;
     const killer = players[socket.id], target = players[targetId];
@@ -286,39 +274,43 @@ io.on("connection", (socket) => {
     const dy = target.y - killer.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist < CONFIG.FLASHLIGHT_RANGE && isInFlashlightCone(killer.x, killer.y, killer.angle, target.x, target.y) && hasLineOfSight(killer.x, killer.y, target.x, target.y)) {
+    if (dist < CONFIG.FLASHLIGHT_RANGE && isInFlashlightCone(killer.x, killer.y, killer.angle, target.x, target.y)) {
       target.isAlive = false;
-      io.emit("playerKilled", { playerId: targetId, killerId: socket.id });
-      const aliveHiders = Object.values(players).filter(p => p.role === "hider" && p.isAlive);
-      if (aliveHiders.length === 0) endGame("killer");
-      else broadcastPlayers();
+      io.emit("playerKilled", { 
+        playerId: targetId, 
+        playerName: target.name,
+        killerId: socket.id,
+        killerName: killer.name
+      });
+      
+      const aliveHiders = getAliveHiders();
+      if (aliveHiders.length === 0) {
+          endGame("killer");
+      } else {
+          broadcastPlayers();
+      }
     }
   });
 
   socket.on("disconnect", () => {
     const p = players[socket.id];
     if (!p) return;
-    
     delete players[socket.id];
     
     if (Object.keys(players).length === 0) {
       resetGame();
     } else {
       broadcastPlayers();
-      if (Object.keys(players).length < CONFIG.MIN_PLAYERS && phase === PHASES.LOBBY) {
-          if (lobbyCountdownInterval) { clearInterval(lobbyCountdownInterval); lobbyCountdownInterval = null; }
-          timer = 0;
-          broadcastPhase();
-      }
-      
-      if (phase === PHASES.HIDE || phase === PHASES.HUNT) {
+      if (phase === PHASES.LOBBY) {
+          checkAndStartLobbyCountdown();
+      } else if (phase === PHASES.HIDE || phase === PHASES.HUNT) {
         const killer = Object.values(players).find(p => p.role === "killer");
-        const hiders = Object.values(players).filter(p => p.role === "hider" && p.isAlive);
-        if (!killer && hiders.length > 0) endGame("hiders");
-        else if (hiders.length === 0) endGame("killer");
+        const aliveHiders = getAliveHiders();
+        if (!killer && aliveHiders.length > 0) endGame("hiders");
+        else if (aliveHiders.length === 0) endGame("killer");
       }
     }
   });
 });
 
-setInterval(broadcastPlayers, 40);
+setInterval(broadcastPlayers, 45);

@@ -1,10 +1,9 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Lobby from './components/Lobby';
 import Game from './components/Game';
 import { GameState, Player, GamePhase } from './types';
-import { CONFIG } from './constants';
 
 const SERVER_URL = "https://hide-seek-server-l7u3.onrender.com";
 
@@ -26,7 +25,6 @@ const App: React.FC = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('Connected to server:', newSocket.id);
       setGameState(prev => ({ ...prev, myId: newSocket.id || null }));
     });
 
@@ -72,29 +70,25 @@ const App: React.FC = () => {
           <h1 className="text-6xl font-orbitron font-bold text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
             SHADOW HUNT
           </h1>
-          <p className="text-gray-400 font-medium">Multiplayer Hide & Seek Nightmare</p>
+          <p className="text-gray-400 font-medium tracking-widest uppercase text-xs">Multiplayer Horror Simulation</p>
           
-          <div className="bg-[#111] p-8 rounded-2xl border border-gray-800 shadow-2xl space-y-6">
+          <div className="bg-[#111] p-8 rounded-3xl border border-gray-800 shadow-2xl space-y-6 relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent"></div>
             <input
               type="text"
-              placeholder="Enter Survivor Name"
+              placeholder="ENTER SURVIVOR NAME"
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               maxLength={15}
-              className="w-full bg-[#0a0a0a] text-white border-2 border-gray-800 p-4 rounded-xl focus:outline-none focus:border-red-600 transition-all font-semibold"
+              className="w-full bg-[#0a0a0a] text-white border-2 border-gray-800 p-4 rounded-2xl focus:outline-none focus:border-red-600 transition-all font-bold font-orbitron text-center"
             />
             <button
               onClick={() => handleJoin(playerName)}
               disabled={!playerName.trim()}
-              className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-800 text-white font-bold py-4 rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest"
+              className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-800 text-white font-black py-5 rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-[0.2em] font-orbitron"
             >
-              Join the Hunt
+              INITIALIZE JOIN
             </button>
-          </div>
-          
-          <div className="text-xs text-gray-600 space-y-1">
-            <p>WASD / Arrows to Move</p>
-            <p>Mouse to Look / Aim</p>
           </div>
         </div>
       </div>
@@ -102,28 +96,30 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black">
+    <div className="relative w-screen h-screen overflow-hidden bg-black text-white">
       <Game socket={socket!} gameState={gameState} />
       
       {gameState.phase === 'lobby' && (
-        <Lobby gameState={gameState} />
+        <Lobby gameState={gameState} socket={socket!} />
       )}
 
       {gameState.phase === 'result' && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 animate-in fade-in duration-1000">
-          <div className="text-center space-y-6">
-            <h2 className={`text-7xl font-orbitron font-bold ${gameState.winner === 'killer' ? 'text-red-600' : 'text-blue-500'}`}>
-              {gameState.winner?.toUpperCase()} WINS
+        <div className="absolute inset-0 z-[6000] flex items-center justify-center bg-black/95 animate-in fade-in duration-1000">
+          <div className="text-center space-y-8">
+            <h2 className={`text-8xl font-orbitron font-black tracking-tighter ${gameState.winner === 'killer' ? 'text-red-600' : 'text-blue-500'}`}>
+              {(gameState.winner || 'NONE').toUpperCase()} WINS
             </h2>
-            <p className="text-gray-400 text-xl">Returning to lobby soon...</p>
-            <div className="mt-8 flex justify-center gap-4">
-               {gameState.players.slice(0, 3).map(p => (
-                 <div key={p.id} className="bg-[#111] p-4 rounded-lg border border-gray-800">
-                   <p className="font-bold">{p.name}</p>
-                   <p className="text-xs text-gray-500">{p.role}</p>
+            <div className="flex justify-center gap-4">
+               {gameState.players.slice(0, 4).map(p => (
+                 <div key={p.id} className="bg-[#111] p-6 rounded-3xl border border-gray-800 w-40">
+                   <p className="font-black text-xl mb-1">{p.name}</p>
+                   <p className={`text-[10px] font-bold uppercase tracking-widest ${p.role === 'killer' ? 'text-red-600' : 'text-blue-500'}`}>
+                    {p.role}
+                   </p>
                  </div>
                ))}
             </div>
+            <p className="text-gray-500 font-orbitron font-bold uppercase tracking-widest animate-pulse">Rebooting in 5s...</p>
           </div>
         </div>
       )}

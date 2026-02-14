@@ -21,7 +21,7 @@ const HUD: React.FC<HUDProps> = ({ gameState }) => {
         <div className="bg-black/80 border border-gray-700 backdrop-blur-lg p-5 rounded-3xl min-w-[180px] shadow-2xl">
           <p className="text-gray-500 text-[10px] uppercase tracking-[0.2em] mb-1">Status</p>
           <p className={`text-2xl font-bold ${gameState.phase === 'hunt' ? 'text-red-500' : 'text-blue-500'}`}>
-            {gameState.phase.toUpperCase()}
+            {(gameState.phase || 'unknown').toUpperCase()}
           </p>
           <div className="mt-1 text-4xl font-black text-white">
             {Math.max(0, Math.floor(gameState.timer))}s
@@ -31,7 +31,7 @@ const HUD: React.FC<HUDProps> = ({ gameState }) => {
         <div className="bg-black/80 border border-gray-700 backdrop-blur-lg p-5 rounded-3xl text-right shadow-2xl">
           <p className="text-gray-500 text-[10px] uppercase tracking-[0.2em] mb-1">Assigned Role</p>
           <p className={`text-2xl font-bold ${me.role === 'killer' ? 'text-red-600 shadow-red-500/50' : 'text-blue-500'}`}>
-            {me.role.toUpperCase()}
+            {(me.role || 'hider').toUpperCase()}
           </p>
           <p className={`text-xs mt-1 font-bold ${me.isAlive ? 'text-green-500' : 'text-gray-500'}`}>
             {me.isAlive ? '• OPERATIONAL' : '• ELIMINATED'}
@@ -75,7 +75,7 @@ const HUD: React.FC<HUDProps> = ({ gameState }) => {
                     <div key={i} className="w-1.5 h-6 bg-red-600 rounded-full animate-[bounce_1s_infinite]" style={{animationDelay: `${i*0.1}s`}}></div>
                   ))}
                 </div>
-                <p className="text-[10px] text-gray-400 mt-3 text-center uppercase tracking-tighter">CLICK TO NEUTRALIZE TARGET</p>
+                <p className="text-[10px] text-gray-400 mt-3 text-center uppercase tracking-tighter">TARGETING ACTIVE</p>
             </div>
         )}
       </div>

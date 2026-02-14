@@ -10,6 +10,7 @@ export interface Player {
   angle: number;
   role: Role;
   isAlive: boolean;
+  isReady: boolean;
   score?: number;
 }
 
