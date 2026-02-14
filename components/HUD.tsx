@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GameState } from '../types';
 
@@ -15,67 +14,66 @@ const HUD: React.FC<HUDProps> = ({ gameState }) => {
   const totalHiders = hiders.length;
 
   return (
-    <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-8 font-orbitron">
+    <div className="sh-hud-container">
       {/* Header Info */}
-      <div className="flex justify-between items-start">
-        <div className="bg-black/80 border border-gray-700 backdrop-blur-lg p-5 rounded-3xl min-w-[180px] shadow-2xl">
-          <p className="text-gray-500 text-[10px] uppercase tracking-[0.2em] mb-1">Status</p>
-          <p className={`text-2xl font-bold ${gameState.phase === 'hunt' ? 'text-red-500' : 'text-blue-500'}`}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+        <div className="sh-hud-box" style={{ minWidth: '160px' }}>
+          <p style={{ color: '#9ca3af', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 4px 0' }}>Status</p>
+          <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: gameState.phase === 'hunt' ? '#ef4444' : '#3b82f6' }}>
             {(gameState.phase || 'unknown').toUpperCase()}
           </p>
-          <div className="mt-1 text-4xl font-black text-white">
+          <div style={{ fontSize: '2.5rem', fontWeight: 900 }}>
             {Math.max(0, Math.floor(gameState.timer))}s
           </div>
         </div>
 
-        <div className="bg-black/80 border border-gray-700 backdrop-blur-lg p-5 rounded-3xl text-right shadow-2xl">
-          <p className="text-gray-500 text-[10px] uppercase tracking-[0.2em] mb-1">Assigned Role</p>
-          <p className={`text-2xl font-bold ${me.role === 'killer' ? 'text-red-600 shadow-red-500/50' : 'text-blue-500'}`}>
+        <div className="sh-hud-box" style={{ textAlign: 'right' }}>
+          <p style={{ color: '#9ca3af', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 4px 0' }}>Role Assigned</p>
+          <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: me.role === 'killer' ? '#ef4444' : '#3b82f6' }}>
             {(me.role || 'hider').toUpperCase()}
           </p>
-          <p className={`text-xs mt-1 font-bold ${me.isAlive ? 'text-green-500' : 'text-gray-500'}`}>
-            {me.isAlive ? '• OPERATIONAL' : '• ELIMINATED'}
+          <p style={{ margin: '4px 0 0 0', fontSize: '10px', fontWeight: 900, color: me.isAlive ? '#22c55e' : '#9ca3af' }}>
+            {me.isAlive ? '• OPERATIONAL' : '• SIGNAL LOST'}
           </p>
         </div>
       </div>
 
-      {/* Dynamic Instruction */}
-      <div className="self-center transform transition-all duration-500 scale-110">
+      {/* Center Instruction Overlay */}
+      <div style={{ alignSelf: 'center', textAlign: 'center' }}>
         {gameState.phase === 'hide' && (
-          <div className="bg-blue-600/20 border border-blue-500/50 px-10 py-5 rounded-2xl backdrop-blur-md animate-pulse">
-              <p className="text-blue-400 font-bold uppercase tracking-[0.3em] text-xl">
-                  {me.role === 'hider' ? 'CONCEAL YOURSELF' : 'THEY ARE CONCEALING'}
+          <div style={{ background: 'rgba(37, 99, 235, 0.2)', border: '1px solid #3b82f6', padding: '1rem 2rem', borderRadius: '1rem', backdropFilter: 'blur(10px)' }}>
+              <p className="animate-pulse" style={{ color: '#3b82f6', fontWeight: 900, fontSize: '1.25rem', letterSpacing: '0.4em', margin: 0 }}>
+                  {me.role === 'hider' ? 'CONCEAL YOURSELF' : 'PREPARE THE BLADES'}
               </p>
           </div>
         )}
         {!me.isAlive && gameState.phase !== 'result' && (
-           <div className="bg-gray-900/80 border border-red-500/50 px-10 py-5 rounded-2xl backdrop-blur-md">
-              <p className="text-red-600 font-bold uppercase tracking-[0.3em] text-xl animate-bounce">
-                  SIGNAL LOST
+           <div style={{ background: 'rgba(220, 38, 38, 0.2)', border: '1px solid #dc2626', padding: '1rem 2rem', borderRadius: '1rem' }}>
+              <p style={{ color: '#dc2626', fontWeight: 900, fontSize: '1.5rem', letterSpacing: '0.3em', margin: 0 }}>
+                  FATAL ERROR
               </p>
            </div>
         )}
       </div>
 
       {/* Footer Info */}
-      <div className="flex justify-between items-end">
-        <div className="bg-black/80 border border-gray-700 backdrop-blur-lg p-5 rounded-3xl shadow-2xl">
-          <p className="text-gray-500 text-[10px] uppercase tracking-[0.2em] mb-1">Survivors Remaining</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-5xl font-black text-white">{aliveHiders}</span>
-            <span className="text-gray-600 font-bold text-xl">/ {totalHiders}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+        <div className="sh-hud-box">
+          <p style={{ color: '#9ca3af', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 4px 0' }}>Squad Alive</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '3.5rem', fontWeight: 900 }}>{aliveHiders}</span>
+            <span style={{ opacity: 0.3, fontSize: '1.5rem', fontWeight: 900 }}>/ {totalHiders}</span>
           </div>
         </div>
 
         {me.role === 'killer' && gameState.phase === 'hunt' && me.isAlive && (
-            <div className="bg-red-600/20 border border-red-500/50 p-6 rounded-3xl animate-pulse backdrop-blur-sm">
-                <p className="text-red-500 font-bold uppercase tracking-widest text-sm mb-2 text-center">Active Scan Range</p>
-                <div className="flex justify-center gap-1">
+            <div className="sh-hud-box" style={{ background: 'rgba(220, 38, 38, 0.1)', borderColor: 'rgba(220, 38, 38, 0.5)' }}>
+                <p style={{ color: '#ef4444', fontWeight: 900, fontSize: '10px', letterSpacing: '0.2em', textAlign: 'center', marginBottom: '8px' }}>RADAR SCANNING</p>
+                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} className="w-1.5 h-6 bg-red-600 rounded-full animate-[bounce_1s_infinite]" style={{animationDelay: `${i*0.1}s`}}></div>
+                    <div key={i} className="animate-pulse" style={{ width: '4px', height: '16px', background: '#dc2626', borderRadius: '99px', animationDelay: `${i*0.2}s` }}></div>
                   ))}
                 </div>
-                <p className="text-[10px] text-gray-400 mt-3 text-center uppercase tracking-tighter">TARGETING ACTIVE</p>
             </div>
         )}
       </div>

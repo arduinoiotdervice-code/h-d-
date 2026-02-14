@@ -1,8 +1,7 @@
-
 export const CONFIG = {
   TILE_SIZE: 40,
   PLAYER_RADIUS: 14,
-  PLAYER_SPEED: 180, // Reduced by 25%
+  PLAYER_SPEED: 135, // Reduced by 25% (180 * 0.75)
   FLASHLIGHT_RANGE: 400,
   FLASHLIGHT_ANGLE: Math.PI / 2.5, // Sharper triangular beam (~72 degrees)
   HIDER_VISIBILITY_RADIUS: 150,

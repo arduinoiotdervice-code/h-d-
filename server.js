@@ -8,7 +8,7 @@ const app = express();
 app.use(cors({ origin: "*" }));
 
 app.get("/", (_, res) => {
-  res.send("Shadow Hunt Server v3.0 - Ready System & Mobile Support");
+  res.send("Shadow Hunt Server v3.2 - Random Spawns & Flashlight Fixed");
 });
 
 const server = http.createServer(app);
@@ -26,7 +26,7 @@ server.listen(PORT, "0.0.0.0", () => {
 const CONFIG = {
   TILE_SIZE: 40,
   PLAYER_RADIUS: 14,
-  PLAYER_SPEED: 172, // Reduced by 25% from 230
+  PLAYER_SPEED: 135, 
   FLASHLIGHT_RANGE: 400,
   FLASHLIGHT_ANGLE: Math.PI / 2.5, 
   HIDE_DURATION: 15,
@@ -79,8 +79,6 @@ for (let y = 0; y < MAP_DATA.tiles.length; y++) {
   }
 }
 
-/* ================= STATE ================= */
-
 let players = {};
 let phase = PHASES.LOBBY;
 let timer = 0;
@@ -116,6 +114,17 @@ function isInFlashlightCone(kx, ky, ka, tx, ty) {
   if (dist > CONFIG.FLASHLIGHT_RANGE) return false;
   const angleDiff = Math.abs(normalizeAngle(Math.atan2(dy, dx) - ka));
   return angleDiff < (CONFIG.FLASHLIGHT_ANGLE / 2);
+}
+
+/* ================= SHUFFLE HELPER ================= */
+function shuffle(array) {
+  let currentIndex = array.length,  randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
 }
 
 function getAliveHiders() {
@@ -184,8 +193,11 @@ function startHidePhase() {
   const ids = Object.keys(players);
   const killerId = ids[Math.floor(Math.random() * ids.length)];
 
+  // Randomize Spawns
+  const shuffledSpawns = shuffle([...MAP_DATA.spawnPoints]);
+
   ids.forEach((id, index) => {
-    const spawn = MAP_DATA.spawnPoints[index % MAP_DATA.spawnPoints.length];
+    const spawn = shuffledSpawns[index % shuffledSpawns.length];
     players[id].role = id === killerId ? "killer" : "hider";
     players[id].isAlive = true;
     players[id].x = spawn.x;

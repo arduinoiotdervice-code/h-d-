@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Lobby from './components/Lobby';
 import Game from './components/Game';
 import { GameState, Player, GamePhase } from './types';
-
-const SERVER_URL = "https://hide-seek-server-l7u3.onrender.com";
+import { CONFIG } from './constants';
 
 const App: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -19,7 +17,7 @@ const App: React.FC = () => {
   const [playerName, setPlayerName] = useState('');
 
   useEffect(() => {
-    const newSocket = io(SERVER_URL, {
+    const newSocket = io(CONFIG.SERVER_URL, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
     });
@@ -57,7 +55,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleJoin = (name: string) => {
-    if (socket) {
+    if (socket && name.trim()) {
       socket.emit('joinRoom', { name });
       setPlayerName(name);
     }
@@ -65,38 +63,35 @@ const App: React.FC = () => {
 
   if (!isJoined) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#050505] p-6">
-        <div className="w-full max-w-md space-y-8 text-center">
-          <h1 className="text-6xl font-orbitron font-bold text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+      <div className="sh-screen">
+        <div className="sh-panel">
+          <h1 className="font-orbitron" style={{ fontSize: '3rem', color: '#dc2626', fontWeight: 900, marginBottom: '0.5rem', textAlign: 'center' }}>
             SHADOW HUNT
           </h1>
-          <p className="text-gray-400 font-medium tracking-widest uppercase text-xs">Multiplayer Horror Simulation</p>
+          <p style={{ opacity: 0.5, fontSize: '10px', textTransform: 'uppercase', textAlign: 'center', marginBottom: '2.5rem', letterSpacing: '0.2em' }}>Multiplayer Horror Simulation</p>
           
-          <div className="bg-[#111] p-8 rounded-3xl border border-gray-800 shadow-2xl space-y-6 relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent"></div>
-            <input
-              type="text"
-              placeholder="ENTER SURVIVOR NAME"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              maxLength={15}
-              className="w-full bg-[#0a0a0a] text-white border-2 border-gray-800 p-4 rounded-2xl focus:outline-none focus:border-red-600 transition-all font-bold font-orbitron text-center"
-            />
-            <button
-              onClick={() => handleJoin(playerName)}
-              disabled={!playerName.trim()}
-              className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-800 text-white font-black py-5 rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-[0.2em] font-orbitron"
-            >
-              INITIALIZE JOIN
-            </button>
-          </div>
+          <input
+            type="text"
+            placeholder="ENTER SURVIVOR NAME"
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            maxLength={15}
+            className="sh-input"
+          />
+          <button
+            onClick={() => handleJoin(playerName)}
+            disabled={!playerName.trim()}
+            className="sh-btn"
+          >
+            INITIALIZE JOIN
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black text-white">
+    <div className="relative w-screen h-screen overflow-hidden">
       <Game socket={socket!} gameState={gameState} />
       
       {gameState.phase === 'lobby' && (
@@ -104,22 +99,19 @@ const App: React.FC = () => {
       )}
 
       {gameState.phase === 'result' && (
-        <div className="absolute inset-0 z-[6000] flex items-center justify-center bg-black/95 animate-in fade-in duration-1000">
-          <div className="text-center space-y-8">
-            <h2 className={`text-8xl font-orbitron font-black tracking-tighter ${gameState.winner === 'killer' ? 'text-red-600' : 'text-blue-500'}`}>
+        <div className="sh-result-overlay">
+          <div className="text-center">
+            <h2 className="font-orbitron" style={{ fontSize: '5rem', fontWeight: 900, color: gameState.winner === 'killer' ? '#dc2626' : '#2563eb' }}>
               {(gameState.winner || 'NONE').toUpperCase()} WINS
             </h2>
-            <div className="flex justify-center gap-4">
-               {gameState.players.slice(0, 4).map(p => (
-                 <div key={p.id} className="bg-[#111] p-6 rounded-3xl border border-gray-800 w-40">
-                   <p className="font-black text-xl mb-1">{p.name}</p>
-                   <p className={`text-[10px] font-bold uppercase tracking-widest ${p.role === 'killer' ? 'text-red-600' : 'text-blue-500'}`}>
-                    {p.role}
-                   </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+               {gameState.players.filter(p => p.role === (gameState.winner === 'killer' ? 'killer' : 'hider')).slice(0, 3).map(p => (
+                 <div key={p.id} style={{ background: '#111', padding: '1rem 1.5rem', borderRadius: '1rem', border: '1px solid #374151' }}>
+                   <p style={{ fontWeight: 900, fontSize: '1.2rem', margin: 0 }}>{p.name}</p>
                  </div>
                ))}
             </div>
-            <p className="text-gray-500 font-orbitron font-bold uppercase tracking-widest animate-pulse">Rebooting in 5s...</p>
+            <p className="animate-pulse" style={{ marginTop: '3rem', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.3em' }}>Rebooting in 5s...</p>
           </div>
         </div>
       )}

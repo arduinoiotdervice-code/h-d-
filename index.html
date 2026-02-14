@@ -1,48 +1,223 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shadow Hunt</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Shadow Hunt: The Darkness Within</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
+        :root {
+            --red-primary: #dc2626;
+            --blue-primary: #2563eb;
+            --bg-dark: #050505;
+            --card-bg: #0a0a0a;
+            --border-color: #1f2937;
+            --text-muted: #9ca3af;
+        }
+
+        body, html {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background-color: #050505;
+            background-color: var(--bg-dark);
             font-family: 'Inter', sans-serif;
             color: white;
             user-select: none;
             -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        canvas {
-            display: block;
+
+        #root { width: 100%; height: 100%; }
+
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        
+        /* Core Layout Styles */
+        .sh-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
         }
-        .font-orbitron {
-            font-family: 'Orbitron', sans-serif;
+
+        .sh-panel {
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
         }
-        ::-webkit-scrollbar {
-            width: 4px;
+
+        .sh-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red-primary), transparent);
         }
-        ::-webkit-scrollbar-track {
+
+        .sh-input {
+            width: 100%;
             background: #000;
+            border: 2px solid #1f2937;
+            color: white;
+            padding: 1rem;
+            border-radius: 1rem;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            box-sizing: border-box;
+            margin-bottom: 1.5rem;
+            outline: none;
+            transition: border-color 0.3s;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 10px;
+
+        .sh-input:focus { border-color: var(--red-primary); }
+
+        .sh-btn {
+            width: 100%;
+            background: var(--red-primary);
+            color: white;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+        }
+
+        .sh-btn:hover { background: #b91c1c; transform: translateY(-2px); }
+        .sh-btn:active { transform: translateY(0); }
+        .sh-btn:disabled { background: #374151; cursor: not-allowed; opacity: 0.5; box-shadow: none; }
+
+        .sh-btn-ready { background: #16a34a; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4); border-bottom: 4px solid #14532d; }
+        .sh-btn-not-ready { border-bottom: 4px solid #7f1d1d; }
+
+        /* HUD & Overlays */
+        .sh-hud-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 50;
+        }
+
+        .sh-hud-box {
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #374151;
+            padding: 1rem 1.5rem;
+            border-radius: 1.25rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .sh-kill-feed {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+
+        .sh-kill-tag {
+            background: var(--red-primary);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 99px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            animation: slideDown 0.4s ease-out;
+            border: 1px solid rgba(255,255,255,0.2);
+            white-space: nowrap;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Lobby */
+        .sh-lobby-row {
+            background: #111;
+            border: 1px solid #1f2937;
+            padding: 1rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .sh-ready-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        /* Mobile Joysticks */
+        .sh-joystick-base {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .sh-joystick-handle {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.4);
+            transform: translate(-50%, -50%);
+        }
+        .sh-look-handle { background: rgba(220, 38, 38, 0.4); border-color: rgba(220, 38, 38, 0.5); }
+
+        .sh-result-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 6000;
         }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
     "socket.io-client": "https://esm.sh/socket.io-client@^4.8.3"
   }
 }
